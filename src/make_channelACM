@@ -48,6 +48,8 @@ ACM_src:= $(addprefix $(ACM_dir), ${SrcT})
 SrcT   := ca_BC_and_Halo.f90 ca_IBM.f90 ca_IBM_implicit.f90 ca_Statistics.f90 ca_System.f90 ca_main.f90
 CA_src := $(addprefix $(CFDACM_dir), ${SrcT})
 
+exeName := $(exeName)$(if $(findstring MTSA,$(ACM_DEFS_Add)),MTSA,)
+
 #-----------------------------------------------------------------------
 # Normally no need to change anything below
 #-----------------------------------------------------------------------

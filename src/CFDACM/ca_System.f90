@@ -39,7 +39,9 @@ contains
     ! locals
     integer::ns,iForcingExtra,idem_start,idem_end,idem
     real(RK)::uddxmax,cflmp,divmax1,divmax2,uxm,vmaxabs(3)
-
+#ifdef MTSA
+    integer::Ni,Nm
+#endif
 #ifdef SeveralSphereInfo
     character(128)::chFile
     type(real3)::Ave_FpForce
@@ -104,6 +106,71 @@ contains
       cflmp=uddxmax*dt
 
       do ns=1,iadvance
+#ifdef MTSA
+        ! step0: Update the Projection Method coefficients.
+        call PMcoeUpdate(ns)
+        idem_start=(itime-1)*icouple+ idem_advance_start(ns)
+        idem_end  =(itime-1)*icouple+ idem_advance_end(ns)
+
+        ! step1: Calculate the right hand side of the three velocity equations.
+        asso_RHS123: associate( RhsX=>RealArr1, RhsY=>RealArr2, RhsZ=>RealHalo)
+        call clcRhsX(ux,uy,uz,RhsX,HistXOld,pressure)
+        call clcRhsY(ux,uy,uz,RhsY,HistYOld,pressure)
+        call clcRhsZ(ux,uy,uz,RhsZ,HistZOld,pressure)
+        ! MTSA
+        do Ni = 1, nSubF
+          IF(IBM_Scheme<2) THEN
+            ! IBM Part1 for explicit coupling ======================
+            associate_uStar: associate(uxStar=>IBMArr1, uyStar=>IBMArr2, uzStar=>IBMArr3)
+            call clc_uStar(uxStar,uyStar,uzStar,ux,uy,uz,RhsX,RhsY,RhsZ)
+            call SetBC_and_UpdateHalo_VelIBM( uxStar,uyStar,uzStar)
+            call PrepareIBM_interp()
+            end associate associate_uStar
+          
+            ! step2: Calculate the Uhat
+            call clcOutFlowVelocity(ux,uy,uz)
+            call clcU1Hat(ux,RhsX)
+            call clcU2Hat(uy,RhsY)
+            call clcU3Hat(uz,RhsZ)
+
+            ! IBM Part2 for explicit coupling ========================
+            ! multi direct forcing method
+            IF(IBM_Scheme<2) THEN
+              associate_VolForce2: associate(VolForce_x=>IBMArr1,VolForce_y=>IBMArr2,VolForce_z=>IBMArr3)
+              do iForcingExtra=1, nForcingExtra
+                call SetBC_and_UpdateHalo_VelIBM( ux,uy,uz)
+                call AdditionalForceIBM(ux,uy,uz,VolForce_x,VolForce_y,VolForce_z)
+              enddo
+              end associate associate_VolForce2
+            ENDIF
+            ! DEM Part for explicit coupling ========================= 
+            IF(IBM_Scheme<2) THEN
+              call IntegrateFluidPrtclForce(ux,uy,uz)
+              do Nm = 1, nSubC
+                call DEM%iterate(idem)
+              enddo
+            ENDIF
+          ENDIF
+        enddo
+        end associate asso_RHS123
+
+        ! step3: Calculate the source term of the PPE 
+        call SetBC_and_UpdateHaloForPrSrc( ux,uy,uz)
+        call correctOutFlowFaceVelocity(ux,uy,uz)
+        asso_Pr: associate(prsrc =>RealArr1, prphi =>RealArr2, prphiHalo =>RealHalo  )
+        call clcPrSrc(ux,uy,uz,prsrc,pressure,divmax1)
+        call clcPPE(prsrc,prphiHalo)
+        call SetBC_and_UpdateHalo_pr(prphiHalo)
+            
+        ! step4: Update the velocity field to get the final real velocity.
+        call FluidVelUpdate(prphiHalo,ux,uy,uz)
+            
+        ! step5: Update the real pressure field  to get the final pressure.
+        call PressureUpdate(pressure, prphiHalo)
+        end associate asso_Pr
+        call SetBC_and_UpdateHalo( ux,uy,uz)
+        call SetBC_and_UpdateHalo_pr( pressure )
+#else
         ! step0: Update the Projection Method coefficients.
         call PMcoeUpdate(ns)
         idem_start=(itime-1)*icouple+ idem_advance_start(ns)
@@ -195,7 +262,7 @@ contains
             call DEM%iterate(idem)
           enddo
         ENDIF
-        
+#endif
 #ifdef ChanBraunJFM2011
 #include "ca_Force_inc.f90"
 #endif

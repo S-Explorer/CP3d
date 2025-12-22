@@ -34,6 +34,9 @@ module Prtcl_Parameters
   real(RK),public::Klub_pp, Klub_pw,Lub_ratio,Ndt_coll,St_Crit
   logical,public::UpdateACMflag,IsDryColl,IsAddFluidPressureGradient
   integer,public::icouple,nForcingExtra,IBM_Scheme,idem_advance_start(3),idem_advance_end(3)
+#ifdef MTSA
+  integer,public:: nSubF, nSubC ! mtsa parameters
+#endif
 #endif
 #ifdef CFDDEM
   integer,public::  icouple
@@ -125,6 +128,11 @@ contains
     logical::IsPeriodic(3)=.false.
     real(RK)::dtDEM,minpoint(3),maxpoint(3)
     integer:: ifirstDEM,ilastDEM,BackupFreqDEM,SaveVisuDEM
+
+#ifdef MTSA
+    integer:: nSubF, nSubC ! mtsa parameters
+#endif
+
 #if defined(CFDDEM) || defined(CFDACM)
     NAMELIST /DEMOptions/ RestartFlag,numPrtcl,numPrtclFix,gravity,CS_Method,CF_Type,PI_Method,PRI_Method,   &
                           numPrtcl_Type,numWall_type,CS_numlvls,CntctList_Size,Wall_max_update_iter,RunName, &
@@ -149,7 +157,11 @@ contains
     NAMELIST/CFDACMCoupling/UpdateACMflag,icouple,nForcingExtra,IBM_Scheme,Klub_pp,Klub_pw,Lub_ratio, &
                             Ndt_coll,IsDryColl,St_Crit,IsAddFluidPressureGradient
 #endif
-              
+
+#if defined(MTSA)
+    NAMELIST/MTSAOptions/ nSubF, nSubC
+#endif
+
     open(newunit=nUnitFile, file=chFile, status='old',form='formatted',IOSTAT=ierror)
     if(ierror/=0) then
        print*, "Cannot open file: "//trim(adjustl(chFile)); STOP
@@ -207,7 +219,11 @@ contains
       idem_advance_end(2)  =icouple_sub*10
       idem_advance_end(3)  =icouple_sub*15
     endif
-    dtDEM     =  dtMax/real(icouple,kind=RK)
+#ifndef MTSA
+      dtDEM = dtMax/real(icouple,kind=RK)
+#else
+      dtDEM = dtMax/real(icouple*nSubF*nSubC,kind=RK) ! AB2: icouple = 1
+#endif
     ifirstDEM =  icouple*(ifirst-1)+1
     ilastDEM  =  icouple* ilast
     BackupFreqDEM = icouple* BackupFreq
