@@ -1,0 +1,9 @@
+*.mod
+example
+ThirdParty*
+ThirdParty/fftw
+*.md
+CompilationLog.txt
+channelACM
+*.py
+
