@@ -742,6 +742,9 @@ contains
     zSt=DEM_decomp%zSt; zEd=DEM_decomp%zEd
 #if defined(CFDDEM) || defined(CFDACM)
     write(ch,'(I10.10)')itime/icouple
+#ifdef MTSA
+    write(ch,'(I10.10)')itime/icouple*nSubC*nSubF
+#endif
 #else
     write(ch,'(I10.10)')itime
 #endif

@@ -234,6 +234,10 @@ contains
     ilastDEM  =  icouple* ilast
     BackupFreqDEM = icouple* BackupFreq
     SaveVisuDEM   = icouple* SaveVisu
+#ifdef MTSA
+    BackupFreqDEM = icouple * BackupFreq * nSubC * nSubF
+    SaveVisuDEM   = icouple* SaveVisu * nSubC * nSubF
+#endif
     minpoint= (/0.0_RK, 0.0_RK,0.0_RK /)
     maxpoint= (/xlx, yly, zlz/)
     if(BcOption(1)==0)IsPeriodic(1)=.true.
