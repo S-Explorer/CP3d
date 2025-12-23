@@ -29,6 +29,10 @@ contains
 #ifdef ObliqueWallTest
     real(RK)::rMagnitude,rxDir,ryDir
 #endif
+#ifdef TwoParticleCollision
+    logical, save :: PCollisioned = .false.
+    real(RK)::P_distance
+#endif
     
     if(iCountACM==1) then
       TimeIntCoe(1)=1.0_RK
@@ -81,6 +85,19 @@ contains
         rMagnitude=sqrt(GPrtcl_linVel(1,pid)%x*GPrtcl_linVel(1,pid)%x+GPrtcl_linVel(1,pid)%y*GPrtcl_linVel(1,pid)%y)
         GPrtcl_linVel(1,pid)%x= rMagnitude*rxDir
         GPrtcl_linVel(1,pid)%y= rMagnitude*ryDir
+      endif
+#endif
+#ifdef TwoParticleCollision
+      if(.not. PCollisioned) then
+        if (nlocal == 2) then 
+          P_distance = ABS(GPrtcl_PosR(1)%y - GPrtcl_PosR(2)%y) - 2.0*GPrtcl_PosR(1)%w
+          if ( P_distance < 1.e-6) then
+            PCollisioned = .true.
+          endif
+        endif
+        if (GPrtcl_PosR(pid)%y < 0.2286) then
+          GPrtcl_linVel(1,pid)%y = (exp(-40.0*SimTime) - 1.0)
+        endif
       endif
 #endif
       GPrtcl_PosR(pid)=GPrtcl_PosR(pid)+dth*(linVel1+ GPrtcl_linVel(1,pid))

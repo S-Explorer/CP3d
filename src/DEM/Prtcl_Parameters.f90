@@ -36,6 +36,9 @@ module Prtcl_Parameters
   integer,public::icouple,nForcingExtra,IBM_Scheme,idem_advance_start(3),idem_advance_end(3)
 #ifdef MTSA
   integer,public:: nSubF, nSubC ! mtsa parameters
+#ifdef TwoParticleCollision
+  real(RK),public:: velocity_in
+#endif
 #endif
 #endif
 #ifdef CFDDEM
@@ -129,10 +132,6 @@ contains
     real(RK)::dtDEM,minpoint(3),maxpoint(3)
     integer:: ifirstDEM,ilastDEM,BackupFreqDEM,SaveVisuDEM
 
-#ifdef MTSA
-    integer:: nSubF, nSubC ! mtsa parameters
-#endif
-
 #if defined(CFDDEM) || defined(CFDACM)
     NAMELIST /DEMOptions/ RestartFlag,numPrtcl,numPrtclFix,gravity,CS_Method,CF_Type,PI_Method,PRI_Method,   &
                           numPrtcl_Type,numWall_type,CS_numlvls,CntctList_Size,Wall_max_update_iter,RunName, &
@@ -158,8 +157,11 @@ contains
                             Ndt_coll,IsDryColl,St_Crit,IsAddFluidPressureGradient
 #endif
 
-#if defined(MTSA)
+#ifdef MTSA
     NAMELIST/MTSAOptions/ nSubF, nSubC
+#ifdef TwoParticleCollision
+    NAMELIST/TPC/ velocity_in
+#endif
 #endif
 
     open(newunit=nUnitFile, file=chFile, status='old',form='formatted',IOSTAT=ierror)
@@ -222,7 +224,11 @@ contains
 #ifndef MTSA
       dtDEM = dtMax/real(icouple,kind=RK)
 #else
+      read(nUnitFile, nml=MTSAOptions)
       dtDEM = dtMax/real(icouple*nSubF*nSubC,kind=RK) ! AB2: icouple = 1
+#ifdef TwoParticleCollision
+      read(nUnitFile, nml=TPC)
+#endif
 #endif
     ifirstDEM =  icouple*(ifirst-1)+1
     ilastDEM  =  icouple* ilast

@@ -37,6 +37,7 @@ echo "     4: channelLPT"                                             | tee -a $
 echo "     5: channelDEM"                                             | tee -a $CompilingLog
 echo "     6: channelACM"                                             | tee -a $CompilingLog
 echo "     7: channelATP"                                             | tee -a $CompilingLog
+echo "     8: channelMTSA"                                            | tee -a $CompilingLog
 if [[ -n $1 ]]; then
   strTemp=$1
   EXE=${strTemp:5}
@@ -57,6 +58,8 @@ else
     EXE="channelACM"
   elif [ "$id_exe" == 7 ]; then
     EXE="channelATP"
+  elif [ "$id_exe" == 8 ]; then
+    EXE="channelMTSA"
   else
     echo "  Sorry, EXE type cannot be recognized."                    | tee -a $CompilingLog
     echo "  Compiling filed"                                          | tee -a $CompilingLog

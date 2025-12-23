@@ -41,6 +41,7 @@ contains
     real(RK)::uddxmax,cflmp,divmax1,divmax2,uxm,vmaxabs(3)
 #ifdef MTSA
     integer::Ni,Nm
+    real(RK)::tmpdt
 #endif
 #ifdef SeveralSphereInfo
     character(128)::chFile
@@ -107,25 +108,34 @@ contains
 
       do ns=1,iadvance
 #ifdef MTSA
+        ! restore time step
+        tmpdt = dt
+        dt = tmpdt / real(nSubF)
         ! step0: Update the Projection Method coefficients.
         call PMcoeUpdate(ns)
-        idem_start=(itime-1)*icouple+ idem_advance_start(ns)
-        idem_end  =(itime-1)*icouple+ idem_advance_end(ns)
 
         ! step1: Calculate the right hand side of the three velocity equations.
         asso_RHS123: associate( RhsX=>RealArr1, RhsY=>RealArr2, RhsZ=>RealHalo)
-        call clcRhsX(ux,uy,uz,RhsX,HistXOld,pressure)
-        call clcRhsY(ux,uy,uz,RhsY,HistYOld,pressure)
-        call clcRhsZ(ux,uy,uz,RhsZ,HistZOld,pressure)
         ! MTSA
         do Ni = 1, nSubF
+          idem_start=(itime-1)*nSubF*nSubC + (Ni - 1)*nSubC + 1
+          idem_end  =(itime-1)*nSubF*nSubC + Ni*nSubC + 1
+          call clcRhsX(ux,uy,uz,RhsX,HistXOld,pressure)
+          call clcRhsY(ux,uy,uz,RhsY,HistYOld,pressure)
+          call clcRhsZ(ux,uy,uz,RhsZ,HistZOld,pressure)
           IF(IBM_Scheme<2) THEN
             ! IBM Part1 for explicit coupling ======================
             associate_uStar: associate(uxStar=>IBMArr1, uyStar=>IBMArr2, uzStar=>IBMArr3)
             call clc_uStar(uxStar,uyStar,uzStar,ux,uy,uz,RhsX,RhsY,RhsZ)
             call SetBC_and_UpdateHalo_VelIBM( uxStar,uyStar,uzStar)
             call PrepareIBM_interp()
+            call InterpolationAndForcingIBM(uxStar,uyStar,uzStar)
             end associate associate_uStar
+
+            associate_VolForce: associate(VolForce_x=>IBMArr1,VolForce_y=>IBMArr2,VolForce_z=>IBMArr3)
+            call SpreadIbpForce(VolForce_x,VolForce_y,VolForce_z)
+            call updateRhsIBM(RhsX,RhsY,RhsZ,VolForce_x,VolForce_y,VolForce_z)
+            end associate associate_VolForce
           
             ! step2: Calculate the Uhat
             call clcOutFlowVelocity(ux,uy,uz)
@@ -146,13 +156,16 @@ contains
             ! DEM Part for explicit coupling ========================= 
             IF(IBM_Scheme<2) THEN
               call IntegrateFluidPrtclForce(ux,uy,uz)
-              do Nm = 1, nSubC
+              do idem = idem_start, idem_end
                 call DEM%iterate(idem)
               enddo
             ENDIF
           ENDIF
         enddo
         end associate asso_RHS123
+        ! 
+        dt = tmpdt
+        call PMcoeUpdate(ns)
 
         ! step3: Calculate the source term of the PPE 
         call SetBC_and_UpdateHaloForPrSrc( ux,uy,uz)
