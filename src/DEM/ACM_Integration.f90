@@ -3,7 +3,7 @@ module Prtcl_Integration
   use Prtcl_Property
   use Prtcl_Variables
   use Prtcl_Parameters
-  use m_Parameters,only:gravity,PrGradData,IsUxConst
+  use m_Parameters,only:gravity,PrGradData,IsUxConst,SimTime
   implicit none
   private
   real(RK),parameter,dimension(2):: AB2C = [1.5_RK,-0.5_RK]
@@ -89,14 +89,14 @@ contains
 #endif
 #ifdef TwoParticleCollision
       if(.not. PCollisioned) then
-        if (nlocal == 2) then 
+        if (GPrtcl_list%nlocal == 2) then 
           P_distance = ABS(GPrtcl_PosR(1)%y - GPrtcl_PosR(2)%y) - 2.0*GPrtcl_PosR(1)%w
           if ( P_distance < 1.e-6) then
             PCollisioned = .true.
           endif
         endif
         if (GPrtcl_PosR(pid)%y < 0.2286) then
-          GPrtcl_linVel(1,pid)%y = (exp(-40.0*SimTime) - 1.0)
+          GPrtcl_linVel(1,pid)%y = -1.0 * velocity_in * (exp(-40.0*SimTime) - 1.0)
         endif
       endif
 #endif

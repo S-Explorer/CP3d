@@ -245,6 +245,24 @@ elif [ "$EXE" == "channelATP" ]; then
   echo 
   make -f "make_"$EXE CMP=$CMP exeName=$EXE CFD_DEFS_Add=$CFD_DEFS_Add ATP_DEFS_Add=$ATP_DEFS_Add \
   2>&1 | tee -a $CompilingLog
+elif [ "$EXE" == "channelMTSA" ]; then
+  CFD_DEFS_Add=""
+  ACM_DEFS_Add=""
+  CFDACM_DEFS_Add=""
+  if [[ -n $5 ]]; then
+    strTemp=$5
+    CFD_DEFS_Add=${strTemp:13}
+  fi
+  if [[ -n $6 ]]; then
+    strTemp=$6
+    ACM_DEFS_Add=${strTemp:13}
+  fi
+  if [[ -n $7 ]]; then
+    strTemp=$7
+    CFDACM_DEFS_Add=${strTemp:16}
+  fi
+  make -f "make_"$EXE CMP=$CMP exeName=$EXE CFD_DEFS_Add=$CFD_DEFS_Add ACM_DEFS_Add=$ACM_DEFS_Add \
+  CFDACM_DEFS_Add=$CFDACM_DEFS_Add 2>&1                               | tee -a $CompilingLog
 else
   echo  $EXE" wrong, please check !!!"                                | tee -a $CompilingLog
 fi

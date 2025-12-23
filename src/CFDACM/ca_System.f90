@@ -119,7 +119,7 @@ contains
         ! MTSA
         do Ni = 1, nSubF
           idem_start=(itime-1)*nSubF*nSubC + (Ni - 1)*nSubC + 1
-          idem_end  =(itime-1)*nSubF*nSubC + Ni*nSubC + 1
+          idem_end  =(itime-1)*nSubF*nSubC + Ni*nSubC
           call clcRhsX(ux,uy,uz,RhsX,HistXOld,pressure)
           call clcRhsY(ux,uy,uz,RhsY,HistYOld,pressure)
           call clcRhsZ(ux,uy,uz,RhsZ,HistZOld,pressure)
