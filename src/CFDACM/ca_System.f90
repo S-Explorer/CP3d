@@ -113,6 +113,7 @@ contains
         dt = tmpdt / real(nSubF)
         ! step0: Update the Projection Method coefficients.
         call PMcoeUpdate(ns)
+        SimTime = SimTime - dt + tmpdt
 
         ! step1: Calculate the right hand side of the three velocity equations.
         asso_RHS123: associate( RhsX=>RealArr1, RhsY=>RealArr2, RhsZ=>RealHalo)
@@ -166,6 +167,7 @@ contains
         ! 
         dt = tmpdt
         call PMcoeUpdate(ns)
+        SimTime = SimTime - dt
 
         ! step3: Calculate the source term of the PPE 
         call SetBC_and_UpdateHaloForPrSrc( ux,uy,uz)
