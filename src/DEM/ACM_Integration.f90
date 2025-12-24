@@ -91,7 +91,7 @@ contains
       if(.not. PCollisioned) then
         if (GPrtcl_list%nlocal == 2) then 
           P_distance = ABS(GPrtcl_PosR(1)%y - GPrtcl_PosR(2)%y) - 2.0*GPrtcl_PosR(1)%w
-          if ( P_distance < 1.e-6) then
+          if ( P_distance < GPrtcl_PosR(1)%w) then
             PCollisioned = .true.
           endif
         endif
@@ -103,7 +103,7 @@ contains
 #ifdef ParticleWallCollision
       if (.not. PCollisioned) then
         P_distance = ABS(GPrtcl_PosR(pid)%y - GPrtcl_PosR(pid)%w)
-        if (P_distance < 1.6e-6) then
+        if (P_distance < GPrtcl_PosR(1)%w) then
           PCollisioned = .true.
         else
           GPrtcl_linVel(1,pid)%y = velocity_in * (exp(-40.0*SimTime) - 1.0)
