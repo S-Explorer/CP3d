@@ -36,7 +36,7 @@ module Prtcl_Parameters
   integer,public::icouple,nForcingExtra,IBM_Scheme,idem_advance_start(3),idem_advance_end(3)
 #ifdef MTSA
   integer,public:: nSubF, nSubC ! mtsa parameters
-#ifdef TwoParticleCollision
+#if defined(TwoParticleCollision) || defined(ParticleWallCollision)
   real(RK),public:: velocity_in
 #endif
 #endif
@@ -159,7 +159,7 @@ contains
 
 #ifdef MTSA
     NAMELIST/MTSAOptions/ nSubF, nSubC
-#ifdef TwoParticleCollision
+#if defined(TwoParticleCollision) || defined(ParticleWallCollision)
     NAMELIST/TPC/ velocity_in
 #endif
 #endif
@@ -226,7 +226,7 @@ contains
 #else
       read(nUnitFile, nml=MTSAOptions)
       dtDEM = dtMax/real(icouple*nSubF*nSubC,kind=RK) ! AB2: icouple = 1
-#ifdef TwoParticleCollision
+#if defined(TwoParticleCollision) || defined(ParticleWallCollision)
       read(nUnitFile, nml=TPC)
 #endif
 #endif

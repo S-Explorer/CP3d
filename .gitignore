@@ -4,6 +4,6 @@ ThirdParty*
 ThirdParty/fftw
 *.md
 CompilationLog.txt
-channelACM
+channel*
 *.py
 

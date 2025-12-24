@@ -29,7 +29,7 @@ contains
 #ifdef ObliqueWallTest
     real(RK)::rMagnitude,rxDir,ryDir
 #endif
-#ifdef TwoParticleCollision
+#if defined(TwoParticleCollision) || defined(ParticleWallCollision)
     logical, save :: PCollisioned = .false.
     real(RK)::P_distance
 #endif
@@ -100,6 +100,17 @@ contains
         endif
       endif
 #endif
+#ifdef ParticleWallCollision
+      if (.not. PCollisioned) then
+        P_distance = ABS(GPrtcl_PosR(pid)%y - GPrtcl_PosR(pid)%w)
+        if (P_distance < 1.6e-6) then
+          PCollisioned = .true.
+        else
+          GPrtcl_linVel(1,pid)%y = velocity_in * (exp(-40.0*SimTime) - 1.0)
+        endif
+      endif
+#endif
+
       GPrtcl_PosR(pid)=GPrtcl_PosR(pid)+dth*(linVel1+ GPrtcl_linVel(1,pid))
 #ifdef ObliqueWallTest    
       if(GPrtcl_PosR(pid)%y<2.0_RK*GPrtcl_PosR(pid)%w) IsRotate=.true.
