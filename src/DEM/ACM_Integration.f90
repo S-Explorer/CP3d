@@ -1,4 +1,5 @@
 module Prtcl_Integration
+  use mpi
   use m_TypeDef
   use Prtcl_Property
   use Prtcl_Variables
@@ -30,6 +31,8 @@ contains
     real(RK)::rMagnitude,rxDir,ryDir
 #endif
 #if defined(TwoParticleCollision) || defined(ParticleWallCollision)
+    logical :: tmp
+    integer :: ierror
     logical, save :: PCollisioned = .false.
     real(RK)::P_distance
 #endif
@@ -93,6 +96,8 @@ contains
           P_distance = ABS(GPrtcl_PosR(1)%y - GPrtcl_PosR(2)%y) - 2.0*GPrtcl_PosR(1)%w
           if ( P_distance < GPrtcl_PosR(1)%w) then
             PCollisioned = .true.
+            tmp = PCollisioned
+            call MPI_ALLREDUCE(tmp, PCollisioned, 1, MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD, ierror);
           endif
         endif
         if (GPrtcl_PosR(pid)%y < 0.2286) then
@@ -105,6 +110,8 @@ contains
         P_distance = ABS(GPrtcl_PosR(pid)%y - GPrtcl_PosR(pid)%w)
         if (P_distance < GPrtcl_PosR(1)%w) then
           PCollisioned = .true.
+          tmp = PCollisioned
+          call MPI_ALLREDUCE(tmp, PCollisioned, 1, MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD, ierror);
         else
           GPrtcl_linVel(1,pid)%y = velocity_in * (exp(-40.0*SimTime) - 1.0)
         endif
