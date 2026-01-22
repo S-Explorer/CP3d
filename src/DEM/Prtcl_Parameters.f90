@@ -260,6 +260,9 @@ contains
     this%Prtcl_cs_ratio = Prtcl_cs_ratio
     this%CS_Method = CS_Method
     this%CF_Type   = CF_Type
+#ifdef MTSA
+    this%CF_Type   = ACM_LSD
+#endif
     this%PI_Method = PI_Method  
     this%PRI_Method= PRI_Method
            
