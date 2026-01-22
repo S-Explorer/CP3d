@@ -44,6 +44,11 @@ module Prtcl_Property
 #ifdef CFDACM
     real(RK):: Vel_Crit                    ! Turn off fluid forces for large St collsions
     real(RK):: Kn_Grav                
+#ifdef MTSA
+    real(RK):: YoungsModulus_Coe
+    real(RK):: MassEff_t
+    real(RK):: RestitutionCoe_t
+#endif
 #endif
   end type BinaryProperty
     
@@ -87,9 +92,17 @@ contains
         
     ! locals
     real(RK)::FrictionCoe_s_PP,FrictionCoe_k_PP,RestitutionCoe_n_PP
+#ifdef MTSA
+    real(RK)::RestitutionCoe_t_PP
+#endif
     real(RK),dimension(:),allocatable:: Bin_Divided,Density,Diameter,YoungsModulus_P,PoissonRatio_P
+#ifdef MTSA
+    namelist/ParticlePhysicalProperty/Bin_Divided, Density, Diameter,YoungsModulus_P,PoissonRatio_P, &
+                                      FrictionCoe_s_PP,FrictionCoe_k_PP,RestitutionCoe_n_PP,RestitutionCoe_t_PP
+#else
     namelist/ParticlePhysicalProperty/Bin_Divided, Density, Diameter,YoungsModulus_P,PoissonRatio_P, &
                                       FrictionCoe_s_PP,FrictionCoe_k_PP,RestitutionCoe_n_PP
+#endif
     integer:: i,j,iTV(8),nPType,nUnitFile,ierror,sum_prtcl,bin_pnum,prdiff,bin_id
     real(RK):: sum_divided,rtemp,Radius
     type(PureProperty)::pari,parj
@@ -201,7 +214,11 @@ contains
       parj = this%Prtcl_PureProp(j)
       do i=1,nPType
         pari = this%Prtcl_PureProp(i)        
+#ifdef MTSA
+        Bnry= clc_BnryPrtcl_Prop(pari,parj,FrictionCoe_s_PP,FrictionCoe_k_PP,RestitutionCoe_n_PP,RestitutionCoe_t_PP,.false.)
+#else
         Bnry= clc_BnryPrtcl_Prop(pari,parj,FrictionCoe_s_PP,FrictionCoe_k_PP,RestitutionCoe_n_PP,.false.)
+#endif
         this%Prtcl_BnryProp(i,j)= Bnry  
 #ifdef CFDACM
         dlub_pp(i,j)= Lub_ratio* dxyz
@@ -240,8 +257,12 @@ contains
     integer::i,j,nPType,nWType,nUnitFile,ierror
     real(RK)::FrictionCoe_s_PW,FrictionCoe_k_PW,RestitutionCoe_n_PW
     real(RK),dimension(:),allocatable:: YoungsModulus_W,PoissonRatio_W
+#ifdef MTSA
+    real(RK)::RestitutionCoe_t_PW
+    namelist /WallPhysicalProperty/YoungsModulus_W,PoissonRatio_W,FrictionCoe_s_PW,FrictionCoe_k_PW,RestitutionCoe_n_PW,RestitutionCoe_t_PW
+#else
     namelist /WallPhysicalProperty/YoungsModulus_W,PoissonRatio_W,FrictionCoe_s_PW,FrictionCoe_k_PW,RestitutionCoe_n_PW
-            
+#endif        
     nPType= DEM_Opt%numPrtcl_Type
     nWType= DEM_Opt%numWall_type
     allocate(YoungsModulus_W(nWType))
@@ -276,7 +297,11 @@ contains
       pari = this%Prtcl_PureProp(i)  
       do j = 1, nWType
         wall = this%Wall_PureProp(j)     
+#ifdef MTSA
+        this%PrtclWall_BnryProp(i,j)=clc_BnryPrtcl_Prop(pari,wall,FrictionCoe_s_PW,FrictionCoe_k_PW,RestitutionCoe_n_PW,RestitutionCoe_t_PW,.true.)
+#else
         this%PrtclWall_BnryProp(i,j)=clc_BnryPrtcl_Prop(pari,wall,FrictionCoe_s_PW,FrictionCoe_k_PW,RestitutionCoe_n_PW,.true.)
+#endif
       enddo
 #ifdef CFDACM
       dlub_pw(i)  = Lub_ratio*(dx*dyUniform*dz)**(0.333333333333333333_RK)
@@ -288,10 +313,17 @@ contains
   !*****************************************************************************    
   ! Calculating the binary contact properties
   !*****************************************************************************
+#ifdef MTSA
+  function clc_BnryPrtcl_Prop(pari,parj,FrictionCoe_s,FrictionCoe_k,RestitutionCoe_n,RestitutionCoe_t,iswall) result(Bnry)
+#else
   function clc_BnryPrtcl_Prop(pari,parj,FrictionCoe_s,FrictionCoe_k,RestitutionCoe_n,iswall) result(Bnry)
+#endif
     implicit none
     class(PureProperty),intent(in):: pari, parj
     real(RK),intent(in)::FrictionCoe_s,FrictionCoe_k,RestitutionCoe_n
+#ifdef MTSA
+    real(RK)::RestitutionCoe_t
+#endif
     logical,intent(in) ::iswall
 
     ! locals
@@ -304,11 +336,17 @@ contains
     if(.not.iswall) then
       Bnry%RadEff = (pari%Radius*parj%Radius)/(pari%Radius +parj%Radius)
       Bnry%MassEff= (pari%Mass  *parj%Mass  )/(pari%Mass   +parj%Mass )
+#ifdef MTSA
+      Bnry%MassEff_t = Bnry%MassEff / (1 + 5/2)
+#endif
     else
       Bnry%RadEff = pari%Radius
       Bnry%MassEff= pari%Mass         
     endif
     Bnry%RestitutionCoe_n = RestitutionCoe_n
+#ifdef MTSA
+    Bnry%RestitutionCoe_t = RestitutionCoe_t
+#endif
     Bnry%FrictionCoe_s = FrictionCoe_s
     Bnry%FrictionCoe_k = FrictionCoe_k
 
@@ -335,10 +373,18 @@ contains
     endif
 #ifdef CFDACM
     if(DEM_Opt%CF_Type == ACM_LSD) then      ! Costa et al./Physics Review E 92,053012 (2015)
+#ifdef MTSA
+      Bnry%YoungsModulus_Coe = YoungSModEff
+      Bnry%StiffnessCoe_n = Bnry%MassEff * (PI**2 + log(RestitutionCoe_n)**2)
+      Bnry%DampingCoe_n   = -2.0_RK * Bnry%MassEff * log(RestitutionCoe_n)
+      Bnry%StiffnessCoe_t = Bnry%MassEff_t * (PI**2 + log(RestitutionCoe_t)**2)
+      Bnry%DampingCoe_t   = -2.0_RK * Bnry%MassEff_t * log(RestitutionCoe_t)
+#else
       Bnry%StiffnessCoe_n= Bnry%MassEff*(PI*PI+Eta)
       Bnry%DampingCoe_n  =-2.0_RK*Bnry%MassEff*log(RestitutionCoe_n)
       Bnry%StiffnessCoe_t= Bnry%StiffnessCoe_n*kappa
       Bnry%DampingCoe_t  = Bnry%DampingCoe_n*sqrt(kappa)
+#endif
     elseif(DEM_Opt%CF_Type == ACM_nLin) then ! E. Biegert et al./Journal of Computational Physics 340(2017): 105-127
       rA=0.716_RK; rB=0.830_RK; 
       rC=0.744_RK; Tau_c0=3.218_RK

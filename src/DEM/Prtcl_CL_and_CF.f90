@@ -744,6 +744,9 @@ contains
     type(real3)::Norm_v,Veli,Velj,Rvei,Rvej,Vrij,Vel_w,Vij_n,Vij_t,Ovlp_t,Fnij,Ftij,Moment!,Mrij,W_hat
 #ifdef CFDACM
     real(RK)::TCollision
+#ifdef MTSA
+    real(RK)::massi, Estar
+#endif
 #endif
 
     Prop_ij=DEMProperty%Prtcl_BnryProp(GPrtcl_pType(pid), GPrtcl_pType(pjd))
@@ -755,6 +758,10 @@ contains
     Posj= GPrtcl_PosR(pjd)
     ri= Posi%w; rj= Posj%w
     Norm_v= Posj.nv.Posi  ! Normal vector, Posj-Posi
+#ifdef MTSA
+    massi = DEMProperty%Prtcl_PureProp(GPrtcl_pType(pid))%Mass
+    Estar = Prop_ij%YoungsModulus_Coe
+#endif
 
 #define ContactForce_PP
 #ifdef CFDACM
@@ -780,6 +787,9 @@ contains
     type(real3)::Norm_v,Veli,Velj,Rvei,Rvej,Vrij,Vel_w,Vij_n,Vij_t,Ovlp_t,Fnij,Ftij,Moment!,Mrij,W_hat
 #ifdef CFDACM
     real(RK)::TCollision
+#ifdef MTSA
+    real(RK)::massi, Estar
+#endif
 #endif
 
     Prop_ij=DEMProperty%Prtcl_BnryProp(GPrtcl_pType(pid), GhostP_pType(pjd))
@@ -792,6 +802,11 @@ contains
       Posj= GhostP_PosR(pjd)
       ri= Posi%w; rj= Posj%w
       Norm_v= Posj.nv.Posi  ! Normal vector, Posj-Posi
+#ifdef MTSA
+      massi = DEMProperty%Prtcl_PureProp(GPrtcl_pType(pid))%Mass
+      Estar = Prop_ij%YoungsModulus_Coe
+#endif
+
 #define ContactForce_PPG
 #ifdef CFDACM
 #include "ACM_ContactForce_inc.f90"
@@ -833,6 +848,9 @@ contains
     type(real3)::Norm_v,Veli,Velj,Rvei,Rvej,Vrij,Vel_w,Vij_n,Vij_t,Ovlp_t,Fnij,Ftij,Moment!,Mrij,W_hat
 #ifdef CFDACM
     real(RK)::TCollision
+#ifdef MTSA
+    real(RK)::massi, Estar
+#endif
 #endif
 
     Prop_ij=DEMProperty%Prtcl_BnryProp(GPrtcl_pType(pid), GPFix_pType(pjd))
@@ -844,6 +862,10 @@ contains
     Posj= GPFix_PosR(pjd)
     ri= Posi%w; rj= Posj%w
     Norm_v= Posj.nv.Posi  ! Normal vector, Posj-Posi
+#ifdef MTSA
+      massi = DEMProperty%Prtcl_PureProp(GPrtcl_pType(pid))%Mass
+      Estar = Prop_ij%YoungsModulus_Coe
+#endif
 
 #define ContactForce_PPFix_W
 #ifdef CFDACM
@@ -869,6 +891,9 @@ contains
     type(real3)::Veli,Velj,Rvei,Rvej,Vrij,Vel_w,Vij_n,Vij_t,Ovlp_t,Fnij,Ftij,Moment!,Mrij,W_hat
 #ifdef CFDACM
     real(RK)::TCollision
+#ifdef MTSA
+    real(RK)::massi, Estar
+#endif
 #endif
         
     Prop_ij = DEMProperty%PrtclWall_BnryProp(GPrtcl_pType(pid),DEMGeometry%pWall(mwi)%wall_Type)
@@ -880,6 +905,10 @@ contains
     rj= 1.00E20_RK*ri
     ! since the normal vector points from particle i to j we must negate the normal vector
     Norm_v = (-1.0_RK)*Norm_v
+#ifdef MTSA
+      massi = DEMProperty%Prtcl_PureProp(GPrtcl_pType(pid))%Mass
+      Estar = Prop_ij%YoungsModulus_Coe
+#endif
     
 #define ContactForce_PPFix_W
 #ifdef CFDACM
