@@ -23,7 +23,7 @@
     select case(DEM_opt%CF_Type)
     case(ACM_LSD)
 #ifdef MTSA
-      TCollision = 7.894 * (massi**2 / (Estar**2 * vrn * ri * 2.0_8))**(0.2_8)
+      TCollision = 7.894 * (massi**2 / (Estar**2 * abs(vrn) * ri * 2.0_8))**(0.2_8)
 #endif
       if(VelRel_Init(ind)>Prop_ij%Vel_Crit) then
         GPrtcl_HighSt(pid)="Y"
