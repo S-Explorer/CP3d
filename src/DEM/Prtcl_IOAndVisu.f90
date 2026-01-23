@@ -318,8 +318,12 @@ contains
     integer(kind=8)::disp,disp_pos,disp_ncv,disp_CL,disp_TanStart,disp_Tan
     type(real4),dimension(:),allocatable::TanDel_Un
     integer,dimension(:),allocatable::CntctVec
+    integer::skip_time = 1
+#ifdef MTSA
+    skip_time = nSubC * nSubF
+#endif
 
-    itime = DEM_Opt%ifirst - 1
+    itime = DEM_Opt%ifirst - skip_time
     xSt=DEM_decomp%xSt; xEd=DEM_decomp%xEd
     ySt=DEM_decomp%ySt; yEd=DEM_decomp%yEd
     zSt=DEM_decomp%zSt; zEd=DEM_decomp%zEd
@@ -735,16 +739,17 @@ contains
     integer::nUnit,tsize,rsize,nlocal_sum,nreal3,itype
     integer::itime,ierror,nlocal,i,k,np,nLeft,nRead,int_t(3)
     integer(kind=MPI_OFFSET_KIND)::disp,disp_pos,disp_int,disp_real3
+    integer::skip_time=1
+#ifdef MTSA
+    skip_time = nSubC * nSubF
+#endif
     
-    itime = DEM_Opt%ifirst - 1
+    itime = DEM_Opt%ifirst - skip_time
     xSt=DEM_decomp%xSt; xEd=DEM_decomp%xEd
     ySt=DEM_decomp%ySt; yEd=DEM_decomp%yEd
     zSt=DEM_decomp%zSt; zEd=DEM_decomp%zEd
 #if defined(CFDDEM) || defined(CFDACM)
     write(ch,'(I10.10)')itime/icouple
-#ifdef MTSA
-    write(ch,'(I10.10)')itime/icouple*nSubC*nSubF
-#endif
 #else
     write(ch,'(I10.10)')itime
 #endif

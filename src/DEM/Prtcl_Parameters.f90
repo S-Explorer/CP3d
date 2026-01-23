@@ -250,8 +250,13 @@ contains
     this%numPrtcl    = numPrtcl
     this%numPrtclFix = numPrtclFix
     this%dt       = dtDEM
+#ifndef MTSA
     this%ifirst   = ifirstDEM
     this%ilast    = ilastDEM
+#else
+    this%ifirst   = ifirstDEM * nSubC * nSubF
+    this%ilast    = ilastDEM * nSubC * nSubF
+#endif
     this%gravity  = gravity
     this%SimDomain_min = minpoint
     this%SimDomain_max = maxpoint
