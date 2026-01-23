@@ -31,7 +31,7 @@ contains
     real(RK)::rMagnitude,rxDir,ryDir
 #endif
 #if defined(TwoParticleCollision) || defined(ParticleWallCollision)
-    logical :: tmp
+    logical :: tmp = .false.
     integer :: ierror
     logical, save :: PCollisioned = .false.
     real(RK)::P_distance
@@ -95,9 +95,7 @@ contains
         if (GPrtcl_list%nlocal == 2) then 
           P_distance = ABS(GPrtcl_PosR(1)%y - GPrtcl_PosR(2)%y) - 2.0*GPrtcl_PosR(1)%w
           if ( P_distance < GPrtcl_PosR(1)%w) then
-            PCollisioned = .true.
-            tmp = PCollisioned
-            call MPI_ALLREDUCE(tmp, PCollisioned, 1, MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD, ierror);
+            tmp = .true.
           endif
         endif
         if (GPrtcl_PosR(pid)%y < 0.2286) then
@@ -109,9 +107,7 @@ contains
       if (.not. PCollisioned) then
         P_distance = ABS(GPrtcl_PosR(pid)%y - GPrtcl_PosR(pid)%w)
         if (P_distance < GPrtcl_PosR(1)%w) then
-          PCollisioned = .true.
-          tmp = PCollisioned
-          call MPI_ALLREDUCE(tmp, PCollisioned, 1, MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD, ierror);
+          tmp = .true. 
         else
           GPrtcl_linVel(1,pid)%y = velocity_in * (exp(-40.0*SimTime) - 1.0)
         endif
@@ -123,6 +119,9 @@ contains
       if(GPrtcl_PosR(pid)%y<2.0_RK*GPrtcl_PosR(pid)%w) IsRotate=.true.
 #endif
     ENDDO
+#if (defined TwoParticleCollision) || (defined ParticleWallCollision )
+    call MPI_ALLREDUCE(tmp, PCollisioned, 1, MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD, ierror);
+#endif
 
   end subroutine Prtcl_Integrate
 
